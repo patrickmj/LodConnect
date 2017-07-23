@@ -33,20 +33,33 @@ class Module extends AbstractModule
             $uri = $target->uri();
             $dbpediaUri = str_replace('http://dbpedia.org/data', 'http://dbpedia.org/resource', $uri);
             $easyRdfTargetUri = new EasyRdf_Resource($dbpediaUri);
-            $rdf = file_get_contents($uri);
+            $client = $this->getServiceLocator()->get('Omeka\HttpClient');
+            $client->setUri($uri);
+            $response = $client->send();
+            $rdf = $response->getBody();
+            //echo $rdf;
+            //die();
+            //$rdf = file_get_contents($uri);
             EasyRdf_Namespace::set('dbo', 'http://dbpedia.org/ontology/');
             $graph = new EasyRdf_Graph();
-            $graph->parse($rdf);
-            // remember that this doesn't work, but the non-commented code
-            // does work for setting $resource
-            // refer to the chaos in MetadataBrowse
-            // $resource = $graph->resource($uri);
-            $resource = $graph->resource($easyRdfTargetUri);
-            
-            $property = 'dbo:abstract';
-            $abstract = $resource->getLiteral($property, 'en');
-            $html = $abstract->getValue();
-            $event->setParam('html', $html);
+            try {
+                $triplesCount = $graph->parse($rdf);
+            } catch (\InvalidArgumentException $e) {
+                return;
+            }
+            if ($triplesCount !== 0) {
+                // remember that this doesn't work, but the non-commented code
+                // does work for setting $resource
+                // refer to the chaos in MetadataBrowse
+                // $resource = $graph->resource($uri);
+                $resource = $graph->resource($easyRdfTargetUri);
+                $translator = $this->getServiceLocator()->get('MvcTranslator');
+                $html = "<p>" . $event->getParam('html') . ' ' . $translator->translate('(Full Data)') . " </p>";
+                $property = 'dbo:abstract';
+                $abstract = $resource->getLiteral($property, 'en');
+                $html .= $abstract->getValue();
+                $event->setParam('html', $html);
+            }
         }
     }
 }
