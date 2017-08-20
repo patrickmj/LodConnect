@@ -54,7 +54,7 @@ class Module extends AbstractModule
                 // $resource = $graph->resource($uri);
                 $resource = $graph->resource($easyRdfTargetUri);
                 $translator = $this->getServiceLocator()->get('MvcTranslator');
-                $html = "<p>" . $event->getParam('html') . ' ' . $translator->translate('(Full Data)') . " </p>";
+                $html = "<div>" . $event->getParam('html') . ' ' . $translator->translate('(Full Data)') . " </div>";
                 $property = 'dbo:abstract';
                 $abstract = $resource->getLiteral($property, 'en');
                 $html .= $abstract->getValue();
